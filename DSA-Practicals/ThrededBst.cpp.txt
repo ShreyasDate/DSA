@@ -1,0 +1,190 @@
+#include <iostream>
+#include <iomanip>
+using namespace std;
+
+// Node definition
+class Node {
+    int data;
+    Node* left;
+    Node* right;
+    bool isRightThread;
+
+public:
+    Node(int value) {
+        data = value;
+        left = right = nullptr;
+        isRightThread = false;
+    }
+
+    friend class BinarySearchTree;
+    friend class NodeStack;
+};
+
+// Simple stack for iterative in-order traversal
+class NodeStack {
+    Node* arr[50];
+    int top;
+
+public:
+    NodeStack() {
+        top = -1;
+    }
+
+    bool isEmpty() {
+        return top == -1;
+    }
+
+    bool isFull() {
+        return top == 49;
+    }
+
+    void push(Node* node) {
+        if (!isFull()) {
+            arr[++top] = node;
+        }
+    }
+
+    Node* pop() {
+        if (!isEmpty()) {
+            return arr[top--];
+        }
+        return nullptr;
+    }
+};
+
+// Binary Search Tree class
+class BinarySearchTree {
+    Node* root;
+
+public:
+    BinarySearchTree() {
+        root = nullptr;
+    }
+
+    void insert(int value);
+    void displayInOrder();
+    void convertToThreaded(Node* current, Node* previous);
+    void displayThreadedInOrder();
+    Node* getLeftMost(Node* node);
+    Node* getRoot() { return root; }
+};
+
+// Insert a new node
+void BinarySearchTree::insert(int value) {
+    Node* newNode = new Node(value);
+
+    if (root == nullptr) {
+        root = newNode;
+        return;
+    }
+
+    Node* current = root;
+    while (true) {
+        if (value < current->data) {
+            if (current->left == nullptr) {
+                current->left = newNode;
+                break;
+            }
+            current = current->left;
+        } else if (value > current->data) {
+            if (current->right == nullptr) {
+                current->right = newNode;
+                break;
+            }
+            current = current->right;
+        } else {
+            cout << "Duplicate values not allowed.\n";
+            delete newNode;
+            break;
+        }
+    }
+}
+
+// Display BST using in-order traversal (non-recursive)
+void BinarySearchTree::displayInOrder() {
+    if (root == nullptr) {
+        cout << "Tree is empty.\n";
+        return;
+    }
+
+    Node* current = root;
+    NodeStack stack;
+
+    cout << "Data\t\tAddress\t\tLeft\t\tRight\n";
+    cout << "---------------------------------------------------------\n";
+
+    while (true) {
+        while (current != nullptr) {
+            stack.push(current);
+            cout << current->data << "\t\t" << current << "\t" << current->left << "\t" << current->right << "\n";
+            current = current->left;
+        }
+
+        if (stack.isEmpty()) break;
+
+        current = stack.pop();
+        current = current->right;
+    }
+}
+
+// Convert BST to Threaded BST (Right Threading only)
+void BinarySearchTree::convertToThreaded(Node* current, Node* previous) {
+    if (current == nullptr) return;
+
+    convertToThreaded(current->right, previous);
+
+    if (current->right == nullptr && previous != nullptr) {
+        current->right = previous;
+        current->isRightThread = true;
+    }
+
+    convertToThreaded(current->left, current);
+}
+
+// Helper to get leftmost node
+Node* BinarySearchTree::getLeftMost(Node* node) {
+    while (node != nullptr && node->left != nullptr) {
+        node = node->left;
+    }
+    return node;
+}
+
+// In-order traversal using threads
+void BinarySearchTree::displayThreadedInOrder() {
+    Node* current = getLeftMost(root);
+
+    cout << "\nThreaded In-Order Traversal:\n";
+    while (current != nullptr) {
+        cout << current->data << " ";
+        if (current->isRightThread)
+            current = current->right;
+        else
+            current = getLeftMost(current->right);
+    }
+    cout << "\n";
+}
+
+// --- Main function for demonstration ---
+int main() {
+    BinarySearchTree tree;
+
+    // Sample inputs
+    tree.insert(50);
+    tree.insert(30);
+    tree.insert(70);
+    tree.insert(20);
+    tree.insert(40);
+    tree.insert(60);
+    tree.insert(80);
+
+    cout << "BST In-Order with Node Info:\n";
+    tree.displayInOrder();
+
+    // Convert to Threaded BST
+    tree.convertToThreaded(tree.getRoot(), nullptr);
+
+    // Display threaded in-order
+    tree.displayThreadedInOrder();
+
+    return 0;
+}
